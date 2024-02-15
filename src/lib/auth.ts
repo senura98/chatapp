@@ -21,8 +21,7 @@ function getGoogleCredentials(){
     return {clientId,clientSecret}
 
 }
-// adapter - evrytime somebody calls this authentication, if they log in with google account
-// certain action with our database will be taken automatically. like email id, user data will be put in
+// adapter - evrytime somebody calls this authentication, if they log in with google account certain action with our database will be taken automatically. like email id, user data will be put in
 // sessions are kept in jwt so it is much more easier for session management through middleware rather than keeping it in db 
 export const authOptions: NextAuthOptions = {
     adapter:UpstashRedisAdapter(db),
