@@ -5,69 +5,65 @@ import { UpstashRedisAdapter } from "@next-auth/upstash-redis-adapter";
 import { db } from "./db";
 import Google from "next-auth/providers/google";
 
+function getGoogleCredentials() {
+  const clientId = process.env.GOOGLE_CLIENT_ID;
+  const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
 
+  if (!clientId || clientId.length === 0) {
+    throw new Error("Missing GOOGLE_CLIENT_ID");
+  }
+  if (!clientSecret || clientSecret.length === 0) {
+    throw new Error("Missing GOOGLE_CLIENT_SECRET");
+  }
 
-function getGoogleCredentials(){
-    const clientId= process.env.GOOGLE_CLIENT_ID
-    const clientSecret=process.env.GOOGLE_CLIENT_SECRET
-
-    if(!clientId||clientId.length===0){
-        throw new Error('Missing GOOGLE_CLIENT_ID')
-    }
-    if(!clientSecret||clientSecret.length===0){
-        throw new Error('Missing GOOGLE_CLIENT_SECRET')
-    }
-
-    return {clientId,clientSecret}
-
+  return { clientId, clientSecret };
 }
 // adapter - evrytime somebody calls this authentication, if they log in with google account certain action with our database will be taken automatically. like email id, user data will be put in
-// sessions are kept in jwt so it is much more easier for session management through middleware rather than keeping it in db 
+// sessions are kept in jwt so it is much more easier for session management through middleware rather than keeping it in db
+//authoptions are important not only for initial login but also for getting session
 export const authOptions: NextAuthOptions = {
-    adapter:UpstashRedisAdapter(db),
-    session:{
-        strategy:"jwt"
+  adapter: UpstashRedisAdapter(db),
+  session: {
+    strategy: "jwt",
+  },
+  pages: {
+    signIn: "/login",
+  },
+  providers: [
+    Google({
+      clientId: getGoogleCredentials().clientId,
+      clientSecret: getGoogleCredentials().clientSecret,
+    }),
+  ],
+  callbacks: {
+    // as User describe the type of the retrieved data
+    async jwt({ token, user }) {
+      const dbUser = (await db.get(`user:${token.id}`)) as User | null;
+
+      if (!dbUser) {
+        token.id = user!.id;
+        return token;
+      }
+
+      return {
+        id: dbUser.id,
+        name: dbUser.name,
+        email: dbUser.email,
+        picture: dbUser.image,
+      };
     },
-    pages:{
-        signIn:'/login'
+    async session({ session, token }) {
+      if (token) {
+        session.user.id = token.id;
+        session.user.name = token.name;
+        session.user.email = token.email;
+        session.user.image = token.picture;
+      }
+
+      return session;
     },
-    providers:[
-        Google({
-            clientId:getGoogleCredentials().clientId,
-            clientSecret:getGoogleCredentials().clientSecret
-        })
-    ],
-    callbacks:{
-        // as User describe the type of the retrieved data
-        async jwt({token,user}){
-            const dbUser=(await db.get(`user:${token.id}`)) as User | null
-
-            if(!dbUser){
-                token.id=user!.id
-                return token
-            }
-
-            return {
-                id:dbUser.id,
-                name:dbUser.name,
-                email:dbUser.email,
-                picture:dbUser.image,
-            }
-        },
-         async session({session,token}){
-            if(token){
-                session.user.id=token.id
-                session.user.name=token.name
-                session.user.email=token.email
-                session.user.image=token.picture
-            }
-
-            return session
-         },
-         redirect(){
-            return '/dashboard'
-         }
-         
-    }
-
-}
+    redirect() {
+      return "/dashboard";
+    },
+  },
+};
