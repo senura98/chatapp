@@ -18,14 +18,15 @@ function getGoogleCredentials() {
 
   return { clientId, clientSecret };
 }
-// adapter - evrytime somebody calls this authentication, if they log in with google account certain action with our database will be taken automatically. like email id, user data will be put in
+// adapter - evrytime somebody calls this authentication, if they log in with google account certain details will be taken automatically trhough authntication provider. like email id, user data and will be put in redis
 // sessions are kept in jwt so it is much more easier for session management through middleware rather than keeping it in db
-//authoptions are important not only for initial login but also for getting session
+//authoptions are important not only for initial login but also for getting session.it utilizes the configuration specified for NextAuth
 export const authOptions: NextAuthOptions = {
   adapter: UpstashRedisAdapter(db),
   session: {
     strategy: "jwt",
   },
+  //if no valid session direct to login
   pages: {
     signIn: "/login",
   },
@@ -35,11 +36,12 @@ export const authOptions: NextAuthOptions = {
       clientSecret: getGoogleCredentials().clientSecret,
     }),
   ],
+  //functions that run during the authentication
   callbacks: {
     // as User describe the type of the retrieved data
     async jwt({ token, user }) {
       const dbUser = (await db.get(`user:${token.id}`)) as User | null;
-
+      //if the user exists, their data is included in the JWT otherwise just the token id is set to userid;
       if (!dbUser) {
         token.id = user!.id;
         return token;
@@ -52,6 +54,7 @@ export const authOptions: NextAuthOptions = {
         picture: dbUser.image,
       };
     },
+    //Enhances the session object with user details from the token
     async session({ session, token }) {
       if (token) {
         session.user.id = token.id;
