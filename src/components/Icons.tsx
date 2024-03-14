@@ -1,3 +1,5 @@
+// custom React component and utility type for handling icons within a React application, specifically using icons from the "lucide-react" library.
+
 import { LucideProps, UserPlus } from "lucide-react";
 
 export const Icons = {
@@ -13,4 +15,6 @@ export const Icons = {
   UserPlus,
 };
 
+//this turns our icons into either logo literal or a user plus literal
+// this is useful when passing one of these icons as props. because this is a function and you cant pass functions between client and server components
 export type Icon = keyof typeof Icons;
