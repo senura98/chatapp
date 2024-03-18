@@ -1,5 +1,6 @@
 //this layout will be common for every page in the dashboard
 
+import FirendRequestSideBarOption from "@/components/FirendRequestSideBarOption";
 import { Icon, Icons } from "@/components/Icons";
 import SignOutButton from "@/components/SignOutButton";
 import { authOptions } from "@/lib/auth";
@@ -70,6 +71,9 @@ const Layout = async ({ children }: LayoutProps) => {
                   );
                 })}
               </ul>
+            </li>
+            <li>
+              <FirendRequestSideBarOption />
             </li>
 
             <li className="-mx-6 mt-auto flex items-center">
